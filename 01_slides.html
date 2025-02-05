@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Procesamiento de Lenguaje Natural con R          </title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Víctor Sanz, PhD    victor.sanz@ugr.es    @vsslledo   VictorSuarezL" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="title_slide.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Procesamiento de Lenguaje Natural con R<br> <i class="fas fa-globe"></i>   <i class="fas fa-laptop"></i>   <i class="fas fa-chart-line"></i> <br>
+]
+.subtitle[
+## F0TH
+]
+.author[
+### Víctor Sanz, PhD <br><br><a href="mailto:victor.sanz@ugr.es"><i class="fa fa-paper-plane fa-fw"></i> victor.sanz@ugr.es</a><br><a href="https://twitter.com/vsslledo"> <i class="fab fa-twitter"></i>  <span class="citation">@vsslledo</span></a><br><a href="https://github.com/VictorSuarezL"><i class="fab fa-github"></i>  VictorSuarezL</a>
+]
+
+---
+
+
+
+
+
+
+
+# &lt;i class="fas fa-indent"&gt;&lt;/i&gt; Índice:
+.pull-left[
+### Miércones 5 de feb
+
+1. Repaso Tidyverse:
+  1. El universo tidyverse
+  1. Principales operaciones en tidyverse/dplyr
+
+1. Obtención de datos:
+  1. API's
+  1. Web Scraping
+
+1. Las características del lenguaje natural:
+  1. Expresiones Regulares
+  1. Bag of Words
+]
+--
+
+.pull-right[
+### Jueves 6 de feb
+
+1. Exploración de datos textuales
+1. Clasificación de temáticas 
+1. Análisis de datos
+1. Análisis basado en redes
+]
+
+
+---
+
+# &lt;i class="fab fa-twitter"&gt;&lt;/i&gt; API de Redes Sociales  
+
+**API**: Application Programming Interface.
+
+&lt;u&gt;Existen dos métodos para acceder a los datos usando APIs:&lt;/u&gt;
+
+--
+
+1. **Stream API**:
+
+  - Proporciona un flujo de mensajes en tiempo real pueden filtarse por una serie de características, siendo las más habituales: palabras clave, usuarios y localizaciones.
+  - También puede obtenerse una muestra aleatoria (~1%).
+  - Limitaciones: Sólo en tiempo real.
+
+--
+
+1. **REST API**: 
+
+  - Proporciona información sobre el perfil de usuarios, timeline, lista de usuarios y seguidores, etc.
+  - Limitaciones: suele tener limitaciones de cantidad de mensajes o limitaciones temporales. 
+  
+-&gt; Ojo! Twitter ha sido probablemente una de las APIs más populares a la hora de analizar redes sociales. Debido a las nuevas políticas la mayoría de sus funcionalidades son de pago, sin embargo existen otras plataformas como Mastodon, Reddit, etc... con APIs para probar
+  
+---
+
+## Variables obtenidas
+
+- **user_id:** ID del usuario.
+- **status_id:** ID del status o tweet.
+- **created_at:** Fecha de creación del tweet.
+- **screenName:** Nombre de pantalla del usuario.
+- **text:** Texto dentro del status o tweet.
+- **source:** Clase de dispositivo.
+- **reply_to_status_id:** ID del status al que responde.
+- **reply_to_user_id:** ID del usuario al que responde.
+- **reply_to_screen_name:** Nombre de pantalla al que responde.
+- **is_retweet:** TRUE si el status o tweet ha sido retwuiteado.
+- **favorite_count:** Número de veces el status o tweet ha sido marcado como favorito.
+- **retweet_count:** Número de veces el status o tweet ha sido retwuiteado.
+
+---
+layout: false
+class: inverse, center, middle
+
+# &lt;i class="fas fa-bullhorn"&gt;&lt;/i&gt; Stream API 
+
+---
+layout: true
+
+# &lt;i class="fas fa-bullhorn"&gt;&lt;/i&gt; Características Stream API
+
+---
+
+Documentación: [link](https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/connecting.html).
+
+--
+
+### Es la manera más recomendada para extraer la información: 
+  - 400 palabras clave
+  
+  - 5,000 id de usuarios 
+  
+  - 25 location boxes&lt;sup&gt;1&lt;/sup&gt;
+
+--
+
+### Problemas:
+
+  - Puede desconectarse con facilidad
+  
+  - Es recomendable guardar la información obtenida con regularidad
+  
+  - Programar script para reiniciarse cada hora
+
+.foot-note[
+[Location Boxes](https://boundingbox.klokantech.com/)
+]
+
+---
+layout: false
+class: inverse, center, middle
+
+# &lt;i class="fas fa-undo-alt"&gt;&lt;/i&gt; Rest API 
+
+---
+
+# &lt;i class="fas fa-undo-alt"&gt;&lt;/i&gt; Características Rest API
+
+Documentación: [link](https://developer.twitter.com/en/docs/tweets/post-and-engage/overview)
+
+### Es la manera de obtener mayor tipo de información:
+  - Timeline
+  
+  - Información del usuario
+  
+  - Lista de friends
+  
+  - Lista de followers
+  
+  
+### Problemas:
+  - Las cantidad de búsqueda está limitada
+  
+  - Retroceder en el tiempo es complicado
+
+---
+class: center, middle, inverse
+
+# &lt;i class="fab fa-creative-commons-sampling"&gt;&lt;/i&gt; Sampling bias?
+
+---
+layout: true
+
+# &lt;i class="fab fa-creative-commons-sampling"&gt;&lt;/i&gt; Sampling bias?
+
+---
+
+- **Morstatter, F., Pfeffer, J., Liu, H., &amp; Carley, K. M.** (2013). Is the Sample Good Enough? Comparing Data from Twitter’s Streaming API with Twitter’s Firehose. [Link](http://doi.org/10.1007/978-3-319-05579-4_10) 
+
+- **González-Bailón, S., Wang, N., Rivero, A., Borge-Holthoefer, J., &amp; Moreno, Y.** (2014). Assessing the bias in samples of large online networks. Social Networks. [Link](http://doi.org/10.1016/j.socnet.2014.01.004)
+
+- **Driscoll, K., &amp; Walker, S.** (2014). Working within a black box: Transparency in the collection and production of big twitter data. International Journal of Communication. [Link]( http://doi.org/10.1016/j.jaci.2003.08.001)
+
+- **Joseph, K., Landwehr, P. M., &amp; Carley, K. M.** (2014). Two 1%s Don’t make a whole: Comparing simultaneous samples from Twitter’s Streaming API. En Lecture Notes in Computer Science (including subseries Lecture Notes in Artificial Intelligence and Lecture Notes in Bioinformatics). [Link](http://doi.org/10.1007/978-3-319-05579-4_10)
+
+- **Steinert-Threlkeld**, Z. (2018). Twitter as Data (Elements in Quantitative and Computational Methods for the Social Sciences). Cambridge: Cambridge University Press. doi:10.1017/9781108529327
+
+---
+
+### Consideraciones
+
+- La muestra aleatoria del 1% no es realmente aleatoria.
+
+- Los hashtags, usuarios, topics menos populares son menos probables de entrar en la muestra.
+
+- Para las búsquedas realizadas por keyword el sesgo no es tan importante.
+
+- Las muestras pequeñas obtenidas a través de un conjunto de hashtags pueden estar sesgadas.
+
+- Los datos obtenidos a través de la REST API están más sesgados que los obtenidos a través de la Streaming API.
+
+---
+layout: false
+class: center, middle, inverse
+
+# &lt;i class="fas fa-globe"&gt;&lt;/i&gt; Web Scraping
+
+---
+
+layout: true
+# &lt;i class="fas fa-globe"&gt;&lt;/i&gt; Web Scraping
+
+---
+
+### ¿En qué consiste el web scraping?
+
+- Técnica para extraer datos de páginas web.
+
+- Automatiza la recopilación de información.
+
+- Utiliza código para "leer" el contenido HTML.
+
+- Permite transformar datos no estructurados en estructurados.
+
+---
+
+### ¿Para qué resulta útil el web scraping?
+
+- Investigación académica: Recolección de grandes volúmenes de datos.
+
+- Análisis de mercado: Seguimiento de precios, productos, tendencias.
+
+- Periodismo de datos: Extracción de información de fuentes públicas.
+
+- Automatización: Actualización de bases de datos de forma automática.
+
+---
+
+### ¿Cómo funciona el web scraping?
+
+- Enviar petición HTTP al servidor web (GET).
+
+- Recibir el HTML de la página.
+
+- Analizar el HTML usando selectores CSS o XPath.
+
+- Extraer los datos deseados.
+
+- Almacenar la información en CSV, JSON, bases de datos, etc.
+
+---
+
+### Consideraciones legales:
+
+- Revisar el archivo robots.txt del sitio web.
+
+- Cumplir con los términos de servicio de la página.
+
+- Evitar sobrecargar servidores (buenas prácticas).
+
+- Consideraciones de propiedad intelectual y privacidad.
+
+--- 
+
+### 💡 Herramientas populares para Web Scraping
+
+- Python: BeautifulSoup, Scrapy, Selenium.
+
+- R: rvest, httr, xml2.
+
+- Javascript: Puppeteer, Cheerio.
+
+---
+
+### Un ejemplo usando `rvest`
+
+Ejemplo: [link](https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/connecting.html).
+
+
+
+``` r
+library(rvest)
+
+# URL de la página web (usa tu propia URL si estás trabajando en local)
+url &lt;- "https://quotes.toscrape.com/" # Ejemplo de página similar
+
+# Leer el contenido HTML de la página
+webpage &lt;- read_html(url)
+
+# Extraer las citas utilizando los selectores CSS
+quotes &lt;- webpage %&gt;%
+  html_nodes(".quote .text") %&gt;% # Selecciona el texto dentro de la clase 'quote'
+  html_text() # Extrae el texto puro
+
+# Ver las citas extraídas
+print(quotes)
+```
+
+---
+
+### Un ejemplo usando `rvest`
+
+
+```
+#&gt;  [1] "“The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”"                
+#&gt;  [2] "“It is our choices, Harry, that show what we truly are, far more than our abilities.”"                                              
+#&gt;  [3] "“There are only two ways to live your life. One is as though nothing is a miracle. The other is as though everything is a miracle.”"
+#&gt;  [4] "“The person, be it gentleman or lady, who has not pleasure in a good novel, must be intolerably stupid.”"                           
+#&gt;  [5] "“Imperfection is beauty, madness is genius and it's better to be absolutely ridiculous than absolutely boring.”"                    
+#&gt;  [6] "“Try not to become a man of success. Rather become a man of value.”"                                                                
+#&gt;  [7] "“It is better to be hated for what you are than to be loved for what you are not.”"                                                 
+#&gt;  [8] "“I have not failed. I've just found 10,000 ways that won't work.”"                                                                  
+#&gt;  [9] "“A woman is like a tea bag; you never know how strong it is until it's in hot water.”"                                              
+#&gt; [10] "“A day without sunshine is like, you know, night.”"
+```
+
+---
+
+### Un ejemplo usando `rvest`
+
+
+``` r
+webpage &lt;- read_html(url)
+
+# Extraer los nombres de los autores
+authors &lt;- webpage %&gt;%
+  html_nodes(".author") %&gt;% # Selecciona los elementos con la clase 'author'
+  html_text() # Extrae el texto de esos elementos
+
+# Mostrar los autores extraídos
+print(authors)
+```
+
+---
+
+### Un ejemplo usando `rvest`
+
+
+```
+#&gt;  [1] "Albert Einstein"   "J.K. Rowling"      "Albert Einstein"  
+#&gt;  [4] "Jane Austen"       "Marilyn Monroe"    "Albert Einstein"  
+#&gt;  [7] "André Gide"        "Thomas A. Edison"  "Eleanor Roosevelt"
+#&gt; [10] "Steve Martin"
+```
+
+---
+
+layout: false
+class: center, middle, inverse
+
+# &lt;i class="fas fa-guitar"&gt;&lt;/i&gt; Trabajar con cadenas de texto
+
+---
+
+layout: true
+
+# &lt;i class="fas fa-guitar"&gt;&lt;/i&gt; StringR
+
+---
+
+### ¿Para qué sirve?
+
+Documentación: [link](https://evoldyn.gitlab.io/evomics-2018/ref-sheets/R_strings.pdf)
+
+- Manejo de cadenas de texto de forma sencilla y eficiente.
+- Sintaxis clara y consistente con el tidyverse.
+- Facilita tareas de limpieza, transformación y extracción de texto.
+- Optimizado para trabajar con datos textuales en análisis de datos y minería de texto.
+
+---
+
+### Funciones más comunes:
+- Búsqueda y detección de patrones (`str_detect`, `str_which`)
+- Extracción de texto específico (`str_extract`, `str_extract_all`)
+- Sustitución y limpieza de texto (`str_replace`, `str_replace_all`)
+- División y unión de texto (`str_split`, `str_c`)
+- Manipulación de longitud y formato (`str_trim`, `str_pad`, `str_to_lower`, `str_to_upper`)
+
+---
+
+### Act. 1:
+En el archivo `covid_19.rds` os he dejado una muestra de tweets sobre la conversación que tuvo lugar a principios del Covid. ¿Cómo podríamos saber cuáles son las personas más mencionadas en esos tweets?
+
+### Act. 2:
+¿Y cuáles son los hashtags más usados?
+
+---
+
+### Act. 1:
+
+
+``` r
+library(stringr)
+
+read_rds("./data/covid_19.rds") %&gt;%
+  select(screen_name, text, created_at) -&gt; df
+
+df %&gt;%
+  filter(str_detect(text, "@")) %&gt;%
+  mutate(text = str_extract_all(text, "@\\w+", simplify = F)) %&gt;%
+  unnest(text) %&gt;%
+  count(text, sort = T)
+```
+
+---
+
+
+```
+#&gt; # A tibble: 574 × 2
+#&gt;    text                 n
+#&gt;    &lt;chr&gt;            &lt;int&gt;
+#&gt;  1 @realDonaldTrump    57
+#&gt;  2 @RealJamesWoods     45
+#&gt;  3 @LivePDDave1        31
+#&gt;  4 @DonaldJTrumpJr     16
+#&gt;  5 @RealCandaceO       15
+#&gt;  6 @Heat_Miser2        14
+#&gt;  7 @SKYRIDER4538       14
+#&gt;  8 @ScottFordTVGuy     12
+#&gt;  9 @Julietknows1       11
+#&gt; 10 @TomFitton          11
+#&gt; # ℹ 564 more rows
+```
+
+---
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="https://platform.twitter.com/widgets.js"></script>
+<script>var slideshow = remark.create({
+"ratio": "16:9",
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
